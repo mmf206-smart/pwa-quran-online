@@ -97,12 +97,40 @@ body {
   margin-bottom: 25px;
 }
 
+.player-controls {
+  margin-top: 15px;
+}
+
+.play-all-btn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.1s;
+}
+
+.play-all-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
 .ayah-card {
   background: var(--card-bg);
   border-radius: 10px;
   padding: 20px;
   margin-bottom: 15px;
   border: 1px solid #334155;
+  transition: border-color 0.3s, background-color 0.3s;
+}
+
+.ayah-card.active-ayah {
+  border-color: var(--accent-color);
+  background-color: #1a2e3b;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
 }
 
 .ayah-top {
@@ -117,6 +145,21 @@ body {
   padding: 4px 10px;
   border-radius: 6px;
   font-size: 0.85rem;
+}
+
+.play-ayah-btn {
+  background: #334155;
+  color: white;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.2s;
+}
+
+.play-ayah-btn.playing {
+  background: var(--accent-color);
 }
 
 .arabic-text {
