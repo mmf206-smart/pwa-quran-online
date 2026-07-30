@@ -176,36 +176,52 @@ function App() {
     setTempNoteText('');
   };
 
-  // دریافت هوشمند و چند مرحله‌ای تفسیر نمونه
+  // دریافت هوشمند و تضمین‌شده تفسیر/توضیح فارسی
   const openTafsirModal = async (surahNum, ayahNumInSurah, surahName = '') => {
     setTafsirLoading(true);
     setActiveTafsir({ surahNum, ayahNumInSurah, surahName, text: '' });
 
     const verseKey = `${surahNum}:${ayahNumInSurah}`;
-    const endpoints = [
-      `https://api.quran.com/api/v4/tafsirs/fa-tafsir-nemoneh/by_ayah/${verseKey}`,
-      `https://api.quran.com/api/v4/tafsirs/169/by_ayah/${verseKey}`,
-      `https://api.quran.com/api/v4/quran/tafsirs/169?verse_key=${verseKey}`,
-      `https://api.quran.com/api/v4/quran/tafsirs/171?verse_key=${verseKey}`
-    ];
+
+    // تابع فیلتر متن انگلیسی
+    const isEnglish = (str) => {
+      if (!str) return false;
+      const engMatches = str.match(/[a-zA-Z]/g);
+      return engMatches && engMatches.length > 15;
+    };
 
     let foundText = null;
 
-    for (const url of endpoints) {
+    // وب‌سرویس‌های کاملاً فارسی
+    const persianEndpoints = [
+      `https://api.quran.com/api/v4/tafsirs/fa-tafsir-nemoneh/by_ayah/${verseKey}`,
+      `https://api.quran.com/api/v4/tafsirs/fa-tafsir-al-mizan/by_ayah/${verseKey}`,
+      `https://api.alquran.cloud/v1/ayah/${verseKey}/fa.makarem`
+    ];
+
+    for (const url of persianEndpoints) {
       try {
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
+          let candidateText = '';
+
           if (data.tafsir?.text) {
-            foundText = data.tafsir.text;
-            break;
+            candidateText = data.tafsir.text;
           } else if (data.tafsirs && data.tafsirs.length > 0 && data.tafsirs[0]?.text) {
-            foundText = data.tafsirs[0].text;
+            candidateText = data.tafsirs[0].text;
+          } else if (data.data?.text) {
+            candidateText = `<strong>ترجمه و روان‌نویسی (آیت‌الله مکارم شیرازی):</strong><br/><br/>` + data.data.text;
+          }
+
+          // تایید تنها در صورت فارسی بودن متن
+          if (candidateText && !isEnglish(candidateText)) {
+            foundText = candidateText;
             break;
           }
         }
       } catch (err) {
-        console.warn('تلاش برای دریافت تفسیر از مسیر زیر موفق نبود:', url);
+        console.warn('عدم موفقیت در آدرس:', url);
       }
     }
 
@@ -221,7 +237,7 @@ function App() {
         surahNum,
         ayahNumInSurah,
         surahName,
-        text: 'متن تفسیری برای این آیه در دیتابیس یافت نشد.'
+        text: 'متن تفسیری فارسی برای این آیه در دیتابیس یافت نشد.'
       });
     }
     setTafsirLoading(false);
@@ -500,14 +516,14 @@ function App() {
         </div>
       )}
 
-      {/* مودال نمایش کامل تفسیر نمونه */}
+      {/* مودال نمایش کامل تفسیر نمونه / روان‌نویسی فارسی */}
       {activeTafsir && (
         <div className="modal-overlay">
           <div className="modal-content tafsir-modal">
-            <h3>📚 تفسیر نمونه - {activeTafsir.surahName} (آیه {activeTafsir.ayahNumInSurah})</h3>
+            <h3>📚 تفسیر / توضیح فارسی - {activeTafsir.surahName} (آیه {activeTafsir.ayahNumInSurah})</h3>
             <div className="tafsir-body">
               {tafsirLoading ? (
-                <p className="loading">در حال بارگذاری متن کامل تفسیر نمونه...</p>
+                <p className="loading">در حال بارگذاری متن تفسیر فارسی...</p>
               ) : (
                 <div 
                   className="tafsir-text"
