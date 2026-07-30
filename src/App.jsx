@@ -332,37 +332,36 @@ function App() {
     setTempNoteText('');
   };
 
+  // دریافت هوشمند و مستقیم تفسیر فارسی
   const openTafsirModal = async (surahNum, ayahNumInSurah, surahName = '') => {
     setTafsirLoading(true);
     setActiveTafsir({ surahNum, ayahNumInSurah, surahName, text: '', sourceName: '' });
 
     const verseKey = `${surahNum}:${ayahNumInSurah}`;
 
-    const isEnglish = (str) => {
-      if (!str) return false;
-      const cleanText = str.replace(/<[^>]*>/g, '');
-      const engMatches = cleanText.match(/[a-zA-Z]/g);
-      return engMatches && (engMatches.length > 20 || (engMatches.length / cleanText.length) > 0.3);
-    };
-
     let foundText = null;
     let sourceName = '';
 
     const sources = [
       {
-        name: 'تفسیر نمونه (Quran.com)',
-        url: `https://api.quran.com/api/v4/quran/tafsirs/fa-tafsir-nemoneh?verse_key=${verseKey}`,
+        name: 'تفسیر نور (استاد قرائتی)',
+        url: `https://api.alquran.cloud/v1/ayah/${verseKey}/fa.gharaati`,
+        parse: (data) => data?.data?.text
+      },
+      {
+        name: 'تفسیر نمونه (آیت‌الله مکارم شیرازی)',
+        url: `https://api.quran.com/api/v4/quran/tafsirs/169?verse_key=${verseKey}`,
         parse: (data) => data?.tafsirs?.[0]?.text
       },
       {
         name: 'تفسیر المیزان (علامه طباطبایی)',
-        url: `https://api.quran.com/api/v4/quran/tafsirs/fa-tafsir-al-mizan?verse_key=${verseKey}`,
+        url: `https://api.quran.com/api/v4/quran/tafsirs/170?verse_key=${verseKey}`,
         parse: (data) => data?.tafsirs?.[0]?.text
       },
       {
-        name: 'ترجمه و توضیحات جامع (استاد مکارم)',
-        url: `https://quranenc.com/api/v1/translation/ayah/persian_makarem/${surahNum}/${ayahNumInSurah}`,
-        parse: (data) => data?.result?.footnote || data?.result?.translation
+        name: 'توضیحات و ترجمه روان (استاد مکارم)',
+        url: `https://api.alquran.cloud/v1/ayah/${verseKey}/fa.makarem`,
+        parse: (data) => data?.data?.text
       }
     ];
 
@@ -372,14 +371,14 @@ function App() {
         if (res.ok) {
           const data = await res.json();
           const extracted = src.parse(data);
-          if (extracted && typeof extracted === 'string' && extracted.trim().length > 0 && !isEnglish(extracted)) {
+          if (extracted && typeof extracted === 'string' && extracted.trim().length > 0) {
             foundText = extracted;
             sourceName = src.name;
             break;
           }
         }
       } catch (err) {
-        console.warn('تلاش برای دریافت تفسیر ناموفق بود:', src.url, err);
+        console.warn('خطا در دریافت تفسیر از سرور:', src.url, err);
       }
     }
 
@@ -396,7 +395,7 @@ function App() {
         surahNum,
         ayahNumInSurah,
         surahName,
-        text: 'متن تفسیری فارسی برای این آیه در دیتابیس آنلاین یافت نشد.',
+        text: 'متأسفانه دریافت آنلاین تفسیر برای این آیه با خطا مواجه شد. لطفاً اتصال اینترنت خود را بررسی کنید.',
         sourceName: ''
       });
     }
