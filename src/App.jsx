@@ -55,8 +55,8 @@ function App() {
     }
   }, [ayahs, loading, targetGlobalAyah]);
 
-  // بارگذاری محتوا (سوره، جزء یا صفحه)
-  const loadContent = (type, id, title, reciterId = selectedReciter, scrollToGlobalAyah = null) => {
+  // بارگذاری محتوا (سوره، جزء یا صفحه) با متد استاندارد Promise.all
+  const loadContent = async (type, id, title, reciterId = selectedReciter, scrollToGlobalAyah = null) => {
     setLoading(true);
     setCurrentAyahIndex(null);
     setIsPlaying(false);
@@ -65,39 +65,33 @@ function App() {
       setTargetGlobalAyah(scrollToGlobalAyah);
     }
 
-    let endpoint = '';
-    if (type === 'surah') {
-      endpoint = `https://api.alquran.cloud/v1/surah/${id}/editions/${reciterId},fa.fooladvand`;
-    } else if (type === 'juz') {
-      endpoint = `https://api.alquran.cloud/v1/juz/${id}/editions/${reciterId},fa.fooladvand`;
-    } else if (type === 'page') {
-      endpoint = `https://api.alquran.cloud/v1/page/${id}/editions/${reciterId},fa.fooladvand`;
+    try {
+      // فراخوانی مجزای صوت و ترجمه فارسی برای پشتیبانی از surah, juz و page
+      const [audioRes, faRes] = await Promise.all([
+        fetch(`https://api.alquran.cloud/v1/${type}/${id}/${reciterId}`).then((res) => res.json()),
+        fetch(`https://api.alquran.cloud/v1/${type}/${id}/fa.fooladvand`).then((res) => res.json())
+      ]);
+
+      if (audioRes.code !== 200 || faRes.code !== 200 || !audioRes.data?.ayahs) {
+        throw new Error('پاسخ نامعتبر از سرور');
+      }
+
+      const audioAyahs = audioRes.data.ayahs;
+      const faAyahs = faRes.data.ayahs;
+
+      const combinedAyahs = audioAyahs.map((ayah, index) => ({
+        ...ayah,
+        faText: faAyahs[index]?.text || ''
+      }));
+
+      setSelectedSelection({ type, id, title });
+      setAyahs(combinedAyahs);
+    } catch (err) {
+      console.error('خطا در بارگذاری محتوا:', err);
+      alert('خطا در دریافت اطلاعات. لطفاً اتصال اینترنت خود را بررسی کرده و مجدداً تلاش کنید.');
+    } finally {
+      setLoading(false);
     }
-
-    fetch(endpoint)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!data.data || !Array.isArray(data.data)) {
-          throw new Error('داده دریافت نشد');
-        }
-
-        const audioData = data.data[0];
-        const faData = data.data[1];
-
-        const combinedAyahs = audioData.ayahs.map((ayah, index) => ({
-          ...ayah,
-          faText: faData.ayahs[index]?.text
-        }));
-
-        setSelectedSelection({ type, id, title });
-        setAyahs(combinedAyahs);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('خطا در بارگذاری محتوا:', err);
-        alert('خطا در دریافت اطلاعات. لطفاً مجدداً تلاش کنید.');
-        setLoading(false);
-      });
   };
 
   const handleReciterChange = (e) => {
@@ -183,12 +177,11 @@ function App() {
     setTempNoteText('');
   };
 
-  // دریافت متن واقعی تفسیر نمونه (Tafseer Nemoneh API)
-  const openTafsirModal = (surahNum, ayahNumInSurah, ayahGlobalNum) => {
+  // دریافت متن کامل تفسیر نمونه (Tafseer Nemoneh API)
+  const openTafsirModal = (surahNum, ayahNumInSurah) => {
     setTafsirLoading(true);
     setActiveTafsir({ surahNum, ayahNumInSurah, text: '' });
 
-    // وب‌سرویس اختصاصی تفسیر نمونه (کد ۱۶۹)
     fetch(`https://api.quran.com/api/v4/tafsirs/169/by_key/${surahNum}:${ayahNumInSurah}`)
       .then((res) => res.json())
       .then((data) => {
@@ -391,7 +384,8 @@ function App() {
                 const isCurrent = currentAyahIndex === index;
                 const isBookmarked = bookmark?.globalNumber === ayah.number;
                 const hasNote = !!notes[ayah.number];
-                const surahNum = ayah.surah?.number || selectedSelection.id;
+                // استخراج شماره واقعی سوره برای تفسیر نمونه
+                const realSurahNumber = ayah.surah?.number || 1;
 
                 return (
                   <div 
@@ -429,7 +423,7 @@ function App() {
 
                         <button 
                           className="icon-btn tafsir-btn"
-                          onClick={() => openTafsirModal(surahNum, ayah.numberInSurah, ayah.number)}
+                          onClick={() => openTafsirModal(realSurahNumber, ayah.numberInSurah)}
                         >
                           📚 تفسیر نمونه
                         </button>
