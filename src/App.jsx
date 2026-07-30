@@ -1,7 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
+// لیست قاریان (شامل قاریان تندخوان/تحدیر و ترتیل)
 const RECITERS = [
+  { id: 'ar.parhizgar', name: '⚡ استاد شهریار پرهیزگار (تندخوانی)' },
+  { id: 'ar.mahermuaiqly', name: '⚡ استاد ماهر المعیقلی (تندخوان)' },
+  { id: 'ar.saoodshuraym', name: '⚡ استاد سعود الشریم (تندخوان)' },
   { id: 'ar.alafasy', name: 'استاد مشاری العفاسی' },
   { id: 'ar.abdulbasitmurattal', name: 'استاد عبدالباسط (ترتیل)' },
   { id: 'ar.minshawi', name: 'استاد محمد صدیق منشاوی' },
@@ -16,12 +20,37 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
-  const [selectedReciter, setSelectedReciter] = useState('ar.alafasy');
+  const [selectedReciter, setSelectedReciter] = useState('ar.parhizgar');
   const [currentAyahIndex, setCurrentAyahIndex] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1); // سرعت تندخوانی: 1x, 1.25x, 1.5x, 2x
   const audioRef = useRef(null);
 
-  // --- سیستم ثبت‌نام و ورود کاربران (Authentication) ---
+  // --- مدیریت دکمه نصب PWA ---
+  const [installPrompt, setInstallPrompt] = useState(null);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (installPrompt) {
+      installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setInstallPrompt(null);
+      }
+    } else {
+      alert('برای نصب روی سیستم/گوشی، از منوی ۳ نقطه مرورگر گزینه Install یا Add to Home Screen را بزنید.');
+    }
+  };
+
+  // --- سیستم ثبت‌نام و ورود کاربران ---
   const [currentUser, setCurrentUser] = useState(() => {
     const savedSession = localStorage.getItem('quran_session_user');
     return savedSession ? JSON.parse(savedSession) : null;
@@ -30,14 +59,12 @@ function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
 
-  // فرم‌های ورودی ثبت‌نام/ورود
   const [authName, setAuthName] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authConfirmPassword, setAuthConfirmPassword] = useState('');
   const [authError, setAuthError] = useState('');
 
-  // ثبت کاربر فعال در نشست
   useEffect(() => {
     if (currentUser) {
       localStorage.setItem('quran_session_user', JSON.stringify(currentUser));
@@ -46,11 +73,9 @@ function App() {
     }
   }, [currentUser]);
 
-  // وضعیت یادداشت‌ها و سرخط کاربر جاری
   const [notes, setNotes] = useState({});
   const [bookmark, setBookmark] = useState(null);
 
-  // بارگذاری یادداشت‌ها و سرخط مخصوص کاربر جاری
   useEffect(() => {
     if (currentUser) {
       const userNotes = localStorage.getItem(`quran_notes_${currentUser.id}`);
@@ -64,7 +89,6 @@ function App() {
     }
   }, [currentUser]);
 
-  // اسکرول خودکار به آیه
   const [targetGlobalAyah, setTargetGlobalAyah] = useState(null);
 
   // مودال‌ها
@@ -73,7 +97,6 @@ function App() {
   const [activeTafsir, setActiveTafsir] = useState(null);
   const [tafsirLoading, setTafsirLoading] = useState(false);
 
-  // دریافت لیست سوره‌ها
   useEffect(() => {
     fetch('https://api.alquran.cloud/v1/surah')
       .then((res) => res.json())
@@ -81,7 +104,6 @@ function App() {
       .catch((err) => console.error('خطا در دریافت لیست سوره‌ها:', err));
   }, []);
 
-  // اسکرول نرم به آیه مقصد
   useEffect(() => {
     if (targetGlobalAyah && ayahs.length > 0 && !loading) {
       setTimeout(() => {
@@ -94,7 +116,12 @@ function App() {
     }
   }, [ayahs, loading, targetGlobalAyah]);
 
-  // بارگذاری محتوا (سوره، جزء یا صفحه)
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate, currentAyahIndex, isPlaying]);
+
   const loadContent = async (type, id, title, reciterId = selectedReciter, scrollToGlobalAyah = null) => {
     setLoading(true);
     setCurrentAyahIndex(null);
@@ -126,7 +153,7 @@ function App() {
       setAyahs(combinedAyahs);
     } catch (err) {
       console.error('خطا در بارگذاری محتوا:', err);
-      alert('خطا در دریافت اطلاعات. لطفاً اتصال اینترنت خود را بررسی کرده و مجدداً تلاش کنید.');
+      alert('خطا در دریافت اطلاعات. لطفاً اتصال اینترنت خود را بررسی کنید.');
     } finally {
       setLoading(false);
     }
@@ -156,6 +183,7 @@ function App() {
 
   useEffect(() => {
     if (audioRef.current && currentAyahIndex !== null) {
+      audioRef.current.playbackRate = playbackRate;
       audioRef.current.play().catch((err) => console.error('خطا در پخش صوت:', err));
     }
   }, [currentAyahIndex]);
@@ -179,7 +207,6 @@ function App() {
     }
   };
 
-  // --- عملیات احراز هویت (Auth Functions) ---
   const handleSignup = (e) => {
     e.preventDefault();
     setAuthError('');
@@ -217,7 +244,6 @@ function App() {
     registeredUsers.push(newUser);
     localStorage.setItem('quran_registered_users', JSON.stringify(registeredUsers));
 
-    // ورود خودکار بعد از ثبت‌نام
     setCurrentUser({ id: newUser.id, name: newUser.name, email: newUser.email });
     setAuthModalOpen(false);
     resetAuthForm();
@@ -263,7 +289,6 @@ function App() {
     setAuthError('');
   };
 
-  // ثبت سرخط برای کاربر وارد شده
   const setBookmarkHandler = (ayah) => {
     if (!currentUser) {
       setAuthModalOpen(true);
@@ -283,7 +308,6 @@ function App() {
     localStorage.setItem(`quran_bookmark_${currentUser.id}`, JSON.stringify(newBookmark));
   };
 
-  // پرش به سرخط
   const handleGoToBookmark = () => {
     if (!bookmark) return;
     loadContent(
@@ -295,7 +319,6 @@ function App() {
     );
   };
 
-  // ذخیره یادداشت
   const handleSaveNote = (globalAyahNumber) => {
     if (!currentUser) {
       setAuthModalOpen(true);
@@ -309,7 +332,6 @@ function App() {
     setTempNoteText('');
   };
 
-  // دریافت هوشمند و تضمین‌شده تفسیر/توضیح فارسی
   const openTafsirModal = async (surahNum, ayahNumInSurah, surahName = '') => {
     setTafsirLoading(true);
     setActiveTafsir({ surahNum, ayahNumInSurah, surahName, text: '', sourceName: '' });
@@ -331,11 +353,6 @@ function App() {
         name: 'تفسیر نمونه (Quran.com)',
         url: `https://api.quran.com/api/v4/quran/tafsirs/fa-tafsir-nemoneh?verse_key=${verseKey}`,
         parse: (data) => data?.tafsirs?.[0]?.text
-      },
-      {
-        name: 'تفسیر نمونه (مسیر دوم)',
-        url: `https://api.quran.com/api/v4/tafsirs/fa-tafsir-nemoneh/by_ayah/${verseKey}`,
-        parse: (data) => data?.tafsir?.text
       },
       {
         name: 'تفسیر المیزان (علامه طباطبایی)',
@@ -408,7 +425,10 @@ function App() {
         <div className="header-title-section">
           <h1>📖 قرآن آنلاین PWA</h1>
           
-          {/* بخش وضعیت حساب کاربری */}
+          <button className="install-app-btn" onClick={handleInstallClick}>
+            📲 نصب اپلیکیشن
+          </button>
+
           <div className="user-auth-badge">
             {currentUser ? (
               <div className="logged-user-info">
@@ -441,6 +461,20 @@ function App() {
             ))}
           </select>
 
+          <div className="speed-control-box">
+            <span>⚡ سرعت:</span>
+            <select 
+              value={playbackRate} 
+              onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
+              className="speed-select"
+            >
+              <option value="1">1x (عادی)</option>
+              <option value="1.25">1.25x (تندخوانی)</option>
+              <option value="1.5">1.5x (تندخوانی سریع)</option>
+              <option value="2">2x (تندخوانی فوق‌سریع)</option>
+            </select>
+          </div>
+
           {selectedSelection && (
             <button 
               className="back-btn" 
@@ -456,7 +490,6 @@ function App() {
         </div>
       </header>
 
-      {/* بنر سرخط کاربر جاری */}
       {bookmark && currentUser && !selectedSelection && (
         <div className="bookmark-banner">
           <div className="bookmark-info">
@@ -565,6 +598,7 @@ function App() {
                 {selectedSelection.type === 'surah' ? 'سوره' : selectedSelection.type === 'juz' ? 'جزء کامل' : 'صفحه کامل'}
               </span>
               {currentUser && <span className="tag user-tag">👤 {currentUser.name}</span>}
+              <span className="tag speed-tag">⚡ سرعت پخش: {playbackRate}x</span>
             </div>
 
             <div className="player-controls">
@@ -707,7 +741,7 @@ function App() {
         </div>
       )}
 
-      {/* مودال احراز هویت (ورود / ثبت‌نام) */}
+      {/* مودال احراز هویت */}
       {authModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content auth-modal">
