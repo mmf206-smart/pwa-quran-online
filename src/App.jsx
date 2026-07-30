@@ -55,7 +55,7 @@ function App() {
     }
   }, [ayahs, loading, targetGlobalAyah]);
 
-  // بارگذاری محتوا (سوره، جزء یا صفحه) با متد استاندارد Promise.all
+  // بارگذاری محتوا (سوره، جزء یا صفحه)
   const loadContent = async (type, id, title, reciterId = selectedReciter, scrollToGlobalAyah = null) => {
     setLoading(true);
     setCurrentAyahIndex(null);
@@ -66,7 +66,6 @@ function App() {
     }
 
     try {
-      // فراخوانی مجزای صوت و ترجمه فارسی برای پشتیبانی از surah, juz و page
       const [audioRes, faRes] = await Promise.all([
         fetch(`https://api.alquran.cloud/v1/${type}/${id}/${reciterId}`).then((res) => res.json()),
         fetch(`https://api.alquran.cloud/v1/${type}/${id}/fa.fooladvand`).then((res) => res.json())
@@ -177,25 +176,34 @@ function App() {
     setTempNoteText('');
   };
 
-  // دریافت متن کامل تفسیر نمونه (Tafseer Nemoneh API)
-  const openTafsirModal = (surahNum, ayahNumInSurah) => {
+  // دریافت متن کامل تفسیر نمونه (اصلاح آدرس Endpoint)
+  const openTafsirModal = (surahNum, ayahNumInSurah, surahName = '') => {
     setTafsirLoading(true);
-    setActiveTafsir({ surahNum, ayahNumInSurah, text: '' });
+    setActiveTafsir({ surahNum, ayahNumInSurah, surahName, text: '' });
 
-    fetch(`https://api.quran.com/api/v4/tafsirs/169/by_key/${surahNum}:${ayahNumInSurah}`)
-      .then((res) => res.json())
+    fetch(`https://api.quran.com/api/v4/quran/tafsirs/169?verse_key=${surahNum}:${ayahNumInSurah}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('خطا در پاسخ سرور');
+        return res.json();
+      })
       .then((data) => {
-        let tafsirContent = data.tafsir?.text || 'متن تفسیری برای این آیه یافت نشد.';
+        const tafsirText = data.tafsirs?.[0]?.text || 'متن تفسیری برای این آیه یافت نشد.';
         setActiveTafsir({
           surahNum,
           ayahNumInSurah,
-          text: tafsirContent
+          surahName,
+          text: tafsirText
         });
         setTafsirLoading(false);
       })
       .catch((err) => {
         console.error('خطا در دریافت تفسیر:', err);
-        setActiveTafsir({ surahNum, ayahNumInSurah, text: 'خطا در برقراری ارتباط با سرور تفسیر.' });
+        setActiveTafsir({
+          surahNum,
+          ayahNumInSurah,
+          surahName,
+          text: 'خطا در برقراری ارتباط با سرور تفسیر. لطفاً اتصال اینترنت خود را بررسی کنید.'
+        });
         setTafsirLoading(false);
       });
   };
@@ -384,8 +392,8 @@ function App() {
                 const isCurrent = currentAyahIndex === index;
                 const isBookmarked = bookmark?.globalNumber === ayah.number;
                 const hasNote = !!notes[ayah.number];
-                // استخراج شماره واقعی سوره برای تفسیر نمونه
-                const realSurahNumber = ayah.surah?.number || 1;
+                const surahNum = ayah.surah?.number || 1;
+                const surahName = ayah.surah?.name || selectedSelection.title;
 
                 return (
                   <div 
@@ -423,7 +431,7 @@ function App() {
 
                         <button 
                           className="icon-btn tafsir-btn"
-                          onClick={() => openTafsirModal(realSurahNumber, ayah.numberInSurah)}
+                          onClick={() => openTafsirModal(surahNum, ayah.numberInSurah, surahName)}
                         >
                           📚 تفسیر نمونه
                         </button>
@@ -477,7 +485,7 @@ function App() {
       {activeTafsir && (
         <div className="modal-overlay">
           <div className="modal-content tafsir-modal">
-            <h3>📚 تفسیر نمونه - آیه {activeTafsir.ayahNumInSurah}</h3>
+            <h3>📚 تفسیر نمونه - {activeTafsir.surahName} (آیه {activeTafsir.ayahNumInSurah})</h3>
             <div className="tafsir-body">
               {tafsirLoading ? (
                 <p className="loading">در حال بارگذاری متن کامل تفسیر نمونه...</p>
