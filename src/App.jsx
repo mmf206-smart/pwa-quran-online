@@ -1,17 +1,39 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
+const RECITERS = [
+  { id: 'ar.alafasy', name: 'استاد مشاری العفاسی' },
+  { id: 'ar.abdulbasitmurattal', name: 'استاد عبدالباسط (ترتیل)' },
+  { id: 'ar.minshawi', name: 'استاد محمد صدیق منشاوی' },
+  { id: 'ar.husary', name: 'استاد خلیل الحصری' },
+];
+
 function App() {
   const [surahs, setSurahs] = useState([]);
   const [selectedSurah, setSelectedSurah] = useState(null);
   const [ayahs, setAyahs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-
+  
+  // تنظیمات قاری
+  const [selectedReciter, setSelectedReciter] = useState('ar.alafasy');
+  
+  // وضعیت‌های پخش صوت
   const [currentAyahIndex, setCurrentAyahIndex] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
 
+  // حافظه داخلی: یادداشت‌ها و سرخط آخرین مطالعه
+  const [notes, setNotes] = useState(() => JSON.parse(localStorage.getItem('quran_notes') || '{}'));
+  const [bookmark, setBookmark] = useState(() => JSON.parse(localStorage.getItem('quran_bookmark') || 'null'));
+  const [editingNoteAyah, setEditingNoteAyah] = useState(null);
+  const [tempNoteText, setTempNoteText] = useState('');
+
+  // مودال تفسیر آیه
+  const [activeTafsir, setActiveTafsir] = useState(null);
+  const [tafsirLoading, setTafsirLoading] = useState(false);
+
+  // دریافت لیست کامل سوره‌ها
   useEffect(() => {
     fetch('https://api.alquran.cloud/v1/surah')
       .then((res) => res.json())
@@ -19,24 +41,26 @@ function App() {
       .catch((err) => console.error('خطا در دریافت لیست سوره‌ها:', err));
   }, []);
 
-  const handleSelectSurah = (surahNumber) => {
+  // بارگذاری سوره انتخاب شده با قاری فعال
+  const loadSurah = (surahNumber, reciterId = selectedReciter) => {
     setLoading(true);
     setCurrentAyahIndex(null);
     setIsPlaying(false);
-    
-    // دریافت همزمان متن عربی + صوت العفاسی + ترجمه فارسی فولادوند
-    fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/ar.alafasy,fa.fooladvand`)
+
+    fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/${reciterId},fa.fooladvand,ar.tajweed`)
       .then((res) => res.json())
       .then((data) => {
-        const arSurah = data.data[0];
+        const audioSurah = data.data[0];
         const faSurah = data.data[1];
+        const tajweedSurah = data.data[2];
 
-        const combinedAyahs = arSurah.ayahs.map((ayah, index) => ({
+        const combinedAyahs = audioSurah.ayahs.map((ayah, index) => ({
           ...ayah,
-          faText: faSurah.ayahs[index]?.text
+          faText: faSurah.ayahs[index]?.text,
+          tajweedText: tajweedSurah.ayahs[index]?.text
         }));
 
-        setSelectedSurah(arSurah);
+        setSelectedSurah(audioSurah);
         setAyahs(combinedAyahs);
         setLoading(false);
       })
@@ -46,6 +70,20 @@ function App() {
       });
   };
 
+  const handleSelectSurah = (surahNumber) => {
+    loadSurah(surahNumber, selectedReciter);
+  };
+
+  // تغییر قاری
+  const handleReciterChange = (e) => {
+    const newReciter = e.target.value;
+    setSelectedReciter(newReciter);
+    if (selectedSurah) {
+      loadSurah(selectedSurah.number, newReciter);
+    }
+  };
+
+  // مدیریت پخش صوت
   const playAyah = (index) => {
     setCurrentAyahIndex(index);
     setIsPlaying(true);
@@ -85,6 +123,48 @@ function App() {
     }
   };
 
+  // مدیریت ذخیره سر خط یادآوری (Bookmark)
+  const setBookmarkHandler = (ayah) => {
+    const newBookmark = {
+      surahNumber: selectedSurah.number,
+      surahName: selectedSurah.name,
+      ayahNumber: ayah.numberInSurah,
+      globalNumber: ayah.number
+    };
+    setBookmark(newBookmark);
+    localStorage.setItem('quran_bookmark', JSON.stringify(newBookmark));
+  };
+
+  // مدیریت ذخیره یادداشت روی آیه
+  const handleSaveNote = (globalAyahNumber) => {
+    const updatedNotes = { ...notes, [globalAyahNumber]: tempNoteText };
+    setNotes(updatedNotes);
+    localStorage.setItem('quran_notes', JSON.stringify(updatedNotes));
+    setEditingNoteAyah(null);
+    setTempNoteText('');
+  };
+
+  // دریافت و نمایش تفسیر آیه (تفسیر نمونه / آیت‌الله مکارم)
+  const openTafsirModal = (globalAyahNumber, ayahInSurah) => {
+    setTafsirLoading(true);
+    setActiveTafsir({ ayahInSurah, text: '' });
+
+    fetch(`https://api.alquran.cloud/v1/ayah/${globalAyahNumber}/fa.makarem`)
+      .then((res) => res.json())
+      .then((data) => {
+        setActiveTafsir({
+          ayahInSurah,
+          text: data.data.text || 'تفسیر برای این آیه یافت نشد.'
+        });
+        setTafsirLoading(false);
+      })
+      .catch((err) => {
+        console.error('خطا در دریافت تفسیر:', err);
+        setActiveTafsir({ ayahInSurah, text: 'خطا در برقراری ارتباط با سرور تفسیر.' });
+        setTafsirLoading(false);
+      });
+  };
+
   const filteredSurahs = surahs.filter((surah) =>
     surah.name.includes(searchQuery) ||
     surah.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -95,19 +175,39 @@ function App() {
     <div className="app-container" dir="rtl">
       <header className="header">
         <h1>📖 قرآن آنلاین PWA</h1>
-        {selectedSurah && (
-          <button 
-            className="back-btn" 
-            onClick={() => { 
-              setSelectedSurah(null); 
-              setIsPlaying(false); 
-              setCurrentAyahIndex(null); 
-            }}
-          >
-            ← بازگشت به لیست سوره‌ها
-          </button>
-        )}
+        
+        <div className="header-actions">
+          {/* انتخاب قاری */}
+          <select value={selectedReciter} onChange={handleReciterChange} className="reciter-select">
+            {RECITERS.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+
+          {selectedSurah && (
+            <button 
+              className="back-btn" 
+              onClick={() => { 
+                setSelectedSurah(null); 
+                setIsPlaying(false); 
+                setCurrentAyahIndex(null); 
+              }}
+            >
+              ← لیست سوره‌ها
+            </button>
+          )}
+        </div>
       </header>
+
+      {/* نمایش سرخط مطالعه قبلی در صورت وجود */}
+      {bookmark && !selectedSurah && (
+        <div className="bookmark-banner">
+          <span>🔖 آخرین سرخط مطالعه: <strong>{bookmark.surahName}</strong> (آیه {bookmark.ayahNumber})</span>
+          <button onClick={() => handleSelectSurah(bookmark.surahNumber)} className="resume-btn">
+            ادامه مطالعه →
+          </button>
+        </div>
+      )}
 
       {!selectedSurah ? (
         <main className="main-content">
@@ -162,13 +262,16 @@ function App() {
           )}
 
           {loading ? (
-            <div className="loading">در حال بارگذاری آیات و نشان‌ها...</div>
+            <div className="loading">در حال دریافت آيات و تنظیمات تجوید...</div>
           ) : (
             <div className="ayahs-list">
               {ayahs.map((ayah, index) => {
                 const isCurrent = currentAyahIndex === index;
+                const isBookmarked = bookmark?.globalNumber === ayah.number;
+                const hasNote = !!notes[ayah.number];
+
                 return (
-                  <div key={ayah.number} className={`ayah-card ${isCurrent ? 'active-ayah' : ''}`}>
+                  <div key={ayah.number} className={`ayah-card ${isCurrent ? 'active-ayah' : ''} ${isBookmarked ? 'bookmarked-ayah' : ''}`}>
                     <div className="ayah-top">
                       <div className="badges-group">
                         <span className="verse-badge">۝ {ayah.numberInSurah}</span>
@@ -176,22 +279,100 @@ function App() {
                         {ayah.sajda && <span className="sajda-badge">۩ سجده دار</span>}
                       </div>
 
-                      <button 
-                        className={`play-ayah-btn ${isCurrent && isPlaying ? 'playing' : ''}`} 
-                        onClick={() => playAyah(index)}
-                      >
-                        {isCurrent && isPlaying ? '🔊 در حال پخش' : '▶ پخش صوت'}
-                      </button>
+                      <div className="ayah-actions">
+                        {/* دکمه سر خط یادآوری */}
+                        <button 
+                          className={`icon-btn ${isBookmarked ? 'active-bookmark' : ''}`}
+                          title="علامت‌گذاری به‌عنوان سرخط یادآوری"
+                          onClick={() => setBookmarkHandler(ayah)}
+                        >
+                          🔖 {isBookmarked ? 'سرخط فعال' : 'سرخط'}
+                        </button>
+
+                        {/* دکمه یادداشت */}
+                        <button 
+                          className={`icon-btn ${hasNote ? 'active-note' : ''}`}
+                          onClick={() => {
+                            setEditingNoteAyah(ayah.number);
+                            setTempNoteText(notes[ayah.number] || '');
+                          }}
+                        >
+                          📝 {hasNote ? 'ویرایش یادداشت' : 'یادداشت'}
+                        </button>
+
+                        {/* دکمه لینک تفسیر */}
+                        <button 
+                          className="icon-btn tafsir-btn"
+                          onClick={() => openTafsirModal(ayah.number, ayah.numberInSurah)}
+                        >
+                          📚 تفسیر
+                        </button>
+
+                        {/* دکمه پخش صوت */}
+                        <button 
+                          className={`play-ayah-btn ${isCurrent && isPlaying ? 'playing' : ''}`} 
+                          onClick={() => playAyah(index)}
+                        >
+                          {isCurrent && isPlaying ? '🔊 در حال پخش' : '▶ پخش صوت'}
+                        </button>
+                      </div>
                     </div>
 
+                    {/* متن عربی با اعراب و علامت‌های تجویدی */}
                     <p className="arabic-text">{ayah.text}</p>
                     <p className="translation-text">{ayah.faText}</p>
+
+                    {/* نمایش یادداشت ثبت‌شده روی آیه */}
+                    {hasNote && (
+                      <div className="saved-note-box">
+                        📌 <strong>یادداشت شما:</strong> {notes[ayah.number]}
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           )}
         </main>
+      )}
+
+      {/* مودال افزودن / ویرایش یادداشت */}
+      {editingNoteAyah !== null && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>📝 ثبت یادداشت روی آیه</h3>
+            <textarea
+              rows="4"
+              value={tempNoteText}
+              onChange={(e) => setTempNoteText(e.target.value)}
+              placeholder="نکات تجویدی، برداشت یا یادداشت شخصی خود را اینجا بنویسید..."
+              className="note-textarea"
+            />
+            <div className="modal-actions">
+              <button onClick={() => handleSaveNote(editingNoteAyah)} className="save-btn">ذخیره یادداشت</button>
+              <button onClick={() => setEditingNoteAyah(null)} className="cancel-btn">انصراف</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* مودال نمایش تفسیر آیه */}
+      {activeTafsir && (
+        <div className="modal-overlay">
+          <div className="modal-content tafsir-modal">
+            <h3>📚 تفسیر آیه {activeTafsir.ayahInSurah} (تفسیر نمونه)</h3>
+            <div className="tafsir-body">
+              {tafsirLoading ? (
+                <p className="loading">در حال بارگذاری متن تفسیر...</p>
+              ) : (
+                <p className="tafsir-text">{activeTafsir.text}</p>
+              )}
+            </div>
+            <div className="modal-actions">
+              <button onClick={() => setActiveTafsir(null)} className="cancel-btn">بستن تفسیر</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
