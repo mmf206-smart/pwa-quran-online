@@ -2,6 +2,7 @@
   --bg-color: #0f172a;
   --card-bg: #1e293b;
   --accent-color: #10b981;
+  --accent-gold: #f59e0b;
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
 }
@@ -10,13 +11,13 @@ body {
   margin: 0;
   background-color: var(--bg-color);
   color: var(--text-primary);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: 'Vazirmatn', system-ui, sans-serif;
 }
 
 .app-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 15px;
 }
 
 .header {
@@ -28,13 +29,19 @@ body {
   margin-bottom: 20px;
 }
 
+.header h1 {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
 .back-btn {
   background: var(--accent-color);
   color: white;
   border: none;
-  padding: 8px 16px;
+  padding: 8px 14px;
   border-radius: 8px;
   cursor: pointer;
+  font-family: inherit;
 }
 
 .search-input {
@@ -46,24 +53,25 @@ body {
   color: white;
   margin-bottom: 20px;
   box-sizing: border-box;
+  font-family: inherit;
 }
 
 .surah-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
 }
 
 .surah-card {
   background: var(--card-bg);
   border: 1px solid #334155;
   border-radius: 10px;
-  padding: 15px;
+  padding: 12px 15px;
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   cursor: pointer;
-  transition: transform 0.2s, border-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .surah-card:hover {
@@ -72,9 +80,10 @@ body {
 }
 
 .surah-number {
-  background: var(--accent-color);
-  width: 36px;
-  height: 36px;
+  background: #334155;
+  color: var(--accent-color);
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -83,18 +92,34 @@ body {
 }
 
 .surah-info h3 {
-  margin: 0 0 5px 0;
+  margin: 0 0 4px 0;
+  font-size: 1.05rem;
 }
 
 .surah-info p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
 }
 
 .surah-header {
   text-align: center;
   margin-bottom: 25px;
+}
+
+.meta-tags {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.tag {
+  background: #334155;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
 }
 
 .player-controls {
@@ -105,32 +130,27 @@ body {
   background: var(--accent-color);
   color: white;
   border: none;
-  padding: 10px 24px;
-  border-radius: 20px;
-  font-size: 1rem;
+  padding: 10px 22px;
+  border-radius: 25px;
+  font-size: 0.95rem;
   font-weight: bold;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
-}
-
-.play-all-btn:hover {
-  opacity: 0.9;
-  transform: scale(1.02);
+  font-family: inherit;
 }
 
 .ayah-card {
   background: var(--card-bg);
-  border-radius: 10px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 18px;
   margin-bottom: 15px;
   border: 1px solid #334155;
-  transition: border-color 0.3s, background-color 0.3s;
+  transition: all 0.3s;
 }
 
 .ayah-card.active-ayah {
   border-color: var(--accent-color);
-  background-color: #1a2e3b;
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+  background-color: #162435;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
 }
 
 .ayah-top {
@@ -140,22 +160,49 @@ body {
   margin-bottom: 15px;
 }
 
-.ayah-badge {
-  background: #334155;
-  padding: 4px 10px;
+/* نشان‌ها و تگ‌های آیه */
+.badges-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.verse-badge {
+  background: #0f172a;
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  padding: 3px 10px;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.juz-badge {
+  background: #334155;
+  color: #cbd5e1;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+
+.sajda-badge {
+  background: #7f1d1d;
+  color: #fca5a5;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: bold;
 }
 
 .play-ayah-btn {
   background: #334155;
   color: white;
   border: none;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 0.85rem;
-  transition: background 0.2s;
+  font-size: 0.8rem;
+  font-family: inherit;
 }
 
 .play-ayah-btn.playing {
@@ -163,11 +210,22 @@ body {
 }
 
 .arabic-text {
-  font-size: 1.5rem;
-  line-height: 2.2;
+  font-size: 1.6rem;
+  line-height: 2.3;
   text-align: right;
+  margin: 15px 0 10px 0;
+  font-family: 'Amiri', serif;
+  color: #ffffff;
+}
+
+.translation-text {
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: #cbd5e1;
   margin: 0;
-  font-family: 'Amiri', 'Traditional Arabic', serif;
+  text-align: right;
+  border-top: 1px dashed #334155;
+  padding-top: 10px;
 }
 
 .loading {

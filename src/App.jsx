@@ -8,7 +8,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // وضعیت‌های پخش پیوسته و خودکار
   const [currentAyahIndex, setCurrentAyahIndex] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
@@ -24,26 +23,34 @@ function App() {
     setLoading(true);
     setCurrentAyahIndex(null);
     setIsPlaying(false);
-    fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/ar.alafasy`)
+    
+    // دریافت همزمان متن عربی + صوت العفاسی + ترجمه فارسی فولادوند
+    fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/editions/ar.alafasy,fa.fooladvand`)
       .then((res) => res.json())
       .then((data) => {
-        setSelectedSurah(data.data);
-        setAyahs(data.data.ayahs);
+        const arSurah = data.data[0];
+        const faSurah = data.data[1];
+
+        const combinedAyahs = arSurah.ayahs.map((ayah, index) => ({
+          ...ayah,
+          faText: faSurah.ayahs[index]?.text
+        }));
+
+        setSelectedSurah(arSurah);
+        setAyahs(combinedAyahs);
         setLoading(false);
       })
       .catch((err) => {
-        console.error('خطا در دریافت آیات:', err);
+        console.error('خطا در دریافت اطلاعات سوره:', err);
         setLoading(false);
       });
   };
 
-  // پخش یک آیه خاص
   const playAyah = (index) => {
     setCurrentAyahIndex(index);
     setIsPlaying(true);
   };
 
-  // با تمام شدن آیه، آیه بعدی خودکار پخش می‌شود
   const handleAudioEnded = () => {
     if (currentAyahIndex !== null && currentAyahIndex < ayahs.length - 1) {
       setCurrentAyahIndex((prevIndex) => prevIndex + 1);
@@ -53,14 +60,12 @@ function App() {
     }
   };
 
-  // اجرای پخش پس از تغییر آیه فعال
   useEffect(() => {
     if (audioRef.current && currentAyahIndex !== null) {
       audioRef.current.play().catch((err) => console.error('خطا در پخش صوت:', err));
     }
   }, [currentAyahIndex]);
 
-  // کنترل دکمه پخش/توقف کل سوره
   const togglePlayPause = () => {
     if (!audioRef.current && currentAyahIndex === null) {
       playAyah(0);
@@ -133,9 +138,11 @@ function App() {
         <main className="surah-detail">
           <div className="surah-header">
             <h2>{selectedSurah.name}</h2>
-            <p className="meta-info">
-              {selectedSurah.englishName} | {selectedSurah.revelationType === 'Meccan' ? 'مکی' : 'مدنی'} | {selectedSurah.numberOfAyahs} آیه
-            </p>
+            <div className="meta-tags">
+              <span className="tag">{selectedSurah.englishName}</span>
+              <span className="tag">{selectedSurah.revelationType === 'Meccan' ? '🕋 مکی' : '🕌 مدنی'}</span>
+              <span className="tag">📄 {selectedSurah.numberOfAyahs} آیه</span>
+            </div>
 
             <div className="player-controls">
               <button className="play-all-btn" onClick={togglePlayPause}>
@@ -144,7 +151,6 @@ function App() {
             </div>
           </div>
 
-          {/* تگ صوتی اصلی برای مدیریت پخش پیوسته */}
           {currentAyahIndex !== null && (
             <audio
               ref={audioRef}
@@ -156,7 +162,7 @@ function App() {
           )}
 
           {loading ? (
-            <div className="loading">در حال دریافت آیات...</div>
+            <div className="loading">در حال بارگذاری آیات و نشان‌ها...</div>
           ) : (
             <div className="ayahs-list">
               {ayahs.map((ayah, index) => {
@@ -164,15 +170,22 @@ function App() {
                 return (
                   <div key={ayah.number} className={`ayah-card ${isCurrent ? 'active-ayah' : ''}`}>
                     <div className="ayah-top">
-                      <span className="ayah-badge">آیه {ayah.numberInSurah}</span>
+                      <div className="badges-group">
+                        <span className="verse-badge">۝ {ayah.numberInSurah}</span>
+                        <span className="juz-badge">جزء {ayah.juz}</span>
+                        {ayah.sajda && <span className="sajda-badge">۩ سجده دار</span>}
+                      </div>
+
                       <button 
                         className={`play-ayah-btn ${isCurrent && isPlaying ? 'playing' : ''}`} 
                         onClick={() => playAyah(index)}
                       >
-                        {isCurrent && isPlaying ? '🔊 در حال پخش...' : '▶ پخش این آیه'}
+                        {isCurrent && isPlaying ? '🔊 در حال پخش' : '▶ پخش صوت'}
                       </button>
                     </div>
+
                     <p className="arabic-text">{ayah.text}</p>
+                    <p className="translation-text">{ayah.faText}</p>
                   </div>
                 );
               })}
