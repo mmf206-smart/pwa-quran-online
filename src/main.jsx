@@ -8,3 +8,22 @@ createRoot(document.getElementById('root')).render(
     <App />
   </StrictMode>,
 )
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+
+// ثبت سرویس ورکر برای قابلیت PWA و کارکرد آفلاین
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((reg) => console.log('Service Worker Registered!', reg.scope))
+      .catch((err) => console.error('Service Worker Registration Failed!', err));
+  });
+}
