@@ -176,36 +176,55 @@ function App() {
     setTempNoteText('');
   };
 
-  // دریافت متن کامل تفسیر نمونه (اصلاح آدرس Endpoint)
-  const openTafsirModal = (surahNum, ayahNumInSurah, surahName = '') => {
+  // دریافت هوشمند و چند مرحله‌ای تفسیر نمونه
+  const openTafsirModal = async (surahNum, ayahNumInSurah, surahName = '') => {
     setTafsirLoading(true);
     setActiveTafsir({ surahNum, ayahNumInSurah, surahName, text: '' });
 
-    fetch(`https://api.quran.com/api/v4/quran/tafsirs/169?verse_key=${surahNum}:${ayahNumInSurah}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('خطا در پاسخ سرور');
-        return res.json();
-      })
-      .then((data) => {
-        const tafsirText = data.tafsirs?.[0]?.text || 'متن تفسیری برای این آیه یافت نشد.';
-        setActiveTafsir({
-          surahNum,
-          ayahNumInSurah,
-          surahName,
-          text: tafsirText
-        });
-        setTafsirLoading(false);
-      })
-      .catch((err) => {
-        console.error('خطا در دریافت تفسیر:', err);
-        setActiveTafsir({
-          surahNum,
-          ayahNumInSurah,
-          surahName,
-          text: 'خطا در برقراری ارتباط با سرور تفسیر. لطفاً اتصال اینترنت خود را بررسی کنید.'
-        });
-        setTafsirLoading(false);
+    const verseKey = `${surahNum}:${ayahNumInSurah}`;
+    const endpoints = [
+      `https://api.quran.com/api/v4/tafsirs/fa-tafsir-nemoneh/by_ayah/${verseKey}`,
+      `https://api.quran.com/api/v4/tafsirs/169/by_ayah/${verseKey}`,
+      `https://api.quran.com/api/v4/quran/tafsirs/169?verse_key=${verseKey}`,
+      `https://api.quran.com/api/v4/quran/tafsirs/171?verse_key=${verseKey}`
+    ];
+
+    let foundText = null;
+
+    for (const url of endpoints) {
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.tafsir?.text) {
+            foundText = data.tafsir.text;
+            break;
+          } else if (data.tafsirs && data.tafsirs.length > 0 && data.tafsirs[0]?.text) {
+            foundText = data.tafsirs[0].text;
+            break;
+          }
+        }
+      } catch (err) {
+        console.warn('تلاش برای دریافت تفسیر از مسیر زیر موفق نبود:', url);
+      }
+    }
+
+    if (foundText) {
+      setActiveTafsir({
+        surahNum,
+        ayahNumInSurah,
+        surahName,
+        text: foundText
       });
+    } else {
+      setActiveTafsir({
+        surahNum,
+        ayahNumInSurah,
+        surahName,
+        text: 'متن تفسیری برای این آیه در دیتابیس یافت نشد.'
+      });
+    }
+    setTafsirLoading(false);
   };
 
   const filteredSurahs = surahs.filter((surah) =>
