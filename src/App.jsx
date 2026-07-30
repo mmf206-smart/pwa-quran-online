@@ -12,6 +12,34 @@ const RECITERS = [
   { id: 'ar.husary', name: 'استاد خلیل الحصری' },
 ];
 
+// تم‌های پیش‌فرض آماده
+const PRESET_THEMES = {
+  defaultDark: {
+    bgColor: '#0f172a',
+    cardBg: '#1e293b',
+    arabicColor: '#f8fafc',
+    translationColor: '#cbd5e1'
+  },
+  oledBlack: {
+    bgColor: '#000000',
+    cardBg: '#121212',
+    arabicColor: '#ffffff',
+    translationColor: '#a0a0a0'
+  },
+  sepiaPaper: {
+    bgColor: '#fbf0d9',
+    cardBg: '#f5e5c9',
+    arabicColor: '#2d1f10',
+    translationColor: '#5c4b3f'
+  },
+  cleanLight: {
+    bgColor: '#f1f5f9',
+    cardBg: '#ffffff',
+    arabicColor: '#0f172a',
+    translationColor: '#475569'
+  }
+};
+
 function App() {
   const [surahs, setSurahs] = useState([]);
   const [viewTab, setViewTab] = useState('surah'); // 'surah' | 'juz' | 'page'
@@ -23,8 +51,29 @@ function App() {
   const [selectedReciter, setSelectedReciter] = useState('ar.parhizgar');
   const [currentAyahIndex, setCurrentAyahIndex] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1); // سرعت تندخوانی: 1x, 1.25x, 1.5x, 2x
+  const [playbackRate, setPlaybackRate] = useState(1); // سرعت تندخوانی
   const audioRef = useRef(null);
+
+  // --- سیستم تنظیمات رنگ سفارشی ---
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('quran_theme_colors');
+    return saved ? JSON.parse(saved) : PRESET_THEMES.defaultDark;
+  });
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('quran_theme_colors', JSON.stringify(theme));
+  }, [theme]);
+
+  const updateThemeColor = (key, value) => {
+    setTheme(prev => ({ ...prev, [key]: value }));
+  };
+
+  const applyPresetTheme = (presetKey) => {
+    if (PRESET_THEMES[presetKey]) {
+      setTheme(PRESET_THEMES[presetKey]);
+    }
+  };
 
   // --- مدیریت دکمه نصب PWA ---
   const [installPrompt, setInstallPrompt] = useState(null);
@@ -332,7 +381,7 @@ function App() {
     setTempNoteText('');
   };
 
-  // دریافت هوشمند و مستقیم تفسیر فارسی
+  // دریافت هوشمند تفسیر
   const openTafsirModal = async (surahNum, ayahNumInSurah, surahName = '') => {
     setTafsirLoading(true);
     setActiveTafsir({ surahNum, ayahNumInSurah, surahName, text: '', sourceName: '' });
@@ -378,7 +427,7 @@ function App() {
           }
         }
       } catch (err) {
-        console.warn('خطا در دریافت تفسیر از سرور:', src.url, err);
+        console.warn('خطا در دریافت تفسیر:', src.url, err);
       }
     }
 
@@ -418,15 +467,29 @@ function App() {
     page.toString().includes(searchQuery) || `صفحه ${page}`.includes(searchQuery)
   );
 
+  // استایل‌های پویای متغیرهای رنگی
+  const dynamicStyle = {
+    '--app-bg': theme.bgColor,
+    '--card-bg': theme.cardBg,
+    '--arabic-color': theme.arabicColor,
+    '--translation-color': theme.translationColor,
+  };
+
   return (
-    <div className="app-container" dir="rtl">
+    <div className="app-container" dir="rtl" style={dynamicStyle}>
       <header className="header">
         <div className="header-title-section">
           <h1>📖 قرآن آنلاین PWA</h1>
           
-          <button className="install-app-btn" onClick={handleInstallClick}>
-            📲 نصب اپلیکیشن
-          </button>
+          <div className="header-buttons">
+            <button className="theme-settings-btn" onClick={() => setSettingsModalOpen(true)} title="تنظیم رنگ‌ها و تم">
+              🎨 رنگ و ظاهر
+            </button>
+
+            <button className="install-app-btn" onClick={handleInstallClick}>
+              📲 نصب اپلیکیشن
+            </button>
+          </div>
 
           <div className="user-auth-badge">
             {currentUser ? (
@@ -696,6 +759,69 @@ function App() {
             </div>
           )}
         </main>
+      )}
+
+      {/* مودال تنظیمات رنگ و ظاهر */}
+      {settingsModalOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content color-settings-modal">
+            <h3>🎨 تنظیمات سفارشی رنگ و تم</h3>
+
+            <div className="presets-box">
+              <label>تم‌های آماده سریع:</label>
+              <div className="preset-buttons">
+                <button onClick={() => applyPresetTheme('defaultDark')} className="preset-btn dark">تاریک کلاسیک</button>
+                <button onClick={() => applyPresetTheme('oledBlack')} className="preset-btn oled">مشکی کامل (AMOLED)</button>
+                <button onClick={() => applyPresetTheme('sepiaPaper')} className="preset-btn sepia">کاغذی / سپیا</button>
+                <button onClick={() => applyPresetTheme('cleanLight')} className="preset-btn light">روشن</button>
+              </div>
+            </div>
+
+            <hr className="divider" />
+
+            <div className="color-pickers-grid">
+              <div className="color-picker-item">
+                <label>رنگ پس‌زمینه اصلی:</label>
+                <input 
+                  type="color" 
+                  value={theme.bgColor} 
+                  onChange={(e) => updateThemeColor('bgColor', e.target.value)} 
+                />
+              </div>
+
+              <div className="color-picker-item">
+                <label>رنگ پس‌زمینه کارت‌ها:</label>
+                <input 
+                  type="color" 
+                  value={theme.cardBg} 
+                  onChange={(e) => updateThemeColor('cardBg', e.target.value)} 
+                />
+              </div>
+
+              <div className="color-picker-item">
+                <label>رنگ فونت متن عربی:</label>
+                <input 
+                  type="color" 
+                  value={theme.arabicColor} 
+                  onChange={(e) => updateThemeColor('arabicColor', e.target.value)} 
+                />
+              </div>
+
+              <div className="color-picker-item">
+                <label>رنگ فونت ترجمه فارسی:</label>
+                <input 
+                  type="color" 
+                  value={theme.translationColor} 
+                  onChange={(e) => updateThemeColor('translationColor', e.target.value)} 
+                />
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button onClick={() => setSettingsModalOpen(false)} className="save-btn">تأیید و بستن</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* مودال یادداشت */}
