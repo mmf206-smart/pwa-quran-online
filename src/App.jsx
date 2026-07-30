@@ -25,10 +25,10 @@ function App() {
   const [notes, setNotes] = useState(() => JSON.parse(localStorage.getItem('quran_notes') || '{}'));
   const [bookmark, setBookmark] = useState(() => JSON.parse(localStorage.getItem('quran_bookmark') || 'null'));
   
-  // متغیر برای اسکرول خودکار
-  const [targetAyahNumber, setTargetAyahNumber] = useState(null);
+  // اسکرول خودکار به آیه
+  const [targetGlobalAyah, setTargetGlobalAyah] = useState(null);
 
-  // مودال یادداشت و تفسیر
+  // مودال‌ها
   const [editingNoteAyah, setEditingNoteAyah] = useState(null);
   const [tempNoteText, setTempNoteText] = useState('');
   const [activeTafsir, setActiveTafsir] = useState(null);
@@ -44,47 +44,49 @@ function App() {
 
   // اسکرول نرم به آیه مقصد
   useEffect(() => {
-    if (targetAyahNumber && ayahs.length > 0 && !loading) {
+    if (targetGlobalAyah && ayahs.length > 0 && !loading) {
       setTimeout(() => {
-        const element = document.getElementById(`ayah-${targetAyahNumber}`);
+        const element = document.getElementById(`ayah-global-${targetGlobalAyah}`);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        setTargetAyahNumber(null);
+        setTargetGlobalAyah(null);
       }, 400);
     }
-  }, [ayahs, loading, targetAyahNumber]);
+  }, [ayahs, loading, targetGlobalAyah]);
 
-  // دریافت اطلاعات بر اساس سوره، جزء یا صفحه
-  const loadContent = (type, id, title, reciterId = selectedReciter, scrollToAyah = null) => {
+  // بارگذاری محتوا (سوره، جزء یا صفحه)
+  const loadContent = (type, id, title, reciterId = selectedReciter, scrollToGlobalAyah = null) => {
     setLoading(true);
     setCurrentAyahIndex(null);
     setIsPlaying(false);
 
-    if (scrollToAyah) {
-      setTargetAyahNumber(scrollToAyah);
+    if (scrollToGlobalAyah) {
+      setTargetGlobalAyah(scrollToGlobalAyah);
     }
 
     let endpoint = '';
     if (type === 'surah') {
-      endpoint = `https://api.alquran.cloud/v1/surah/${id}/editions/${reciterId},fa.fooladvand,ar.tajweed`;
+      endpoint = `https://api.alquran.cloud/v1/surah/${id}/editions/${reciterId},fa.fooladvand`;
     } else if (type === 'juz') {
-      endpoint = `https://api.alquran.cloud/v1/juz/${id}/editions/${reciterId},fa.fooladvand,ar.tajweed`;
+      endpoint = `https://api.alquran.cloud/v1/juz/${id}/editions/${reciterId},fa.fooladvand`;
     } else if (type === 'page') {
-      endpoint = `https://api.alquran.cloud/v1/page/${id}/editions/${reciterId},fa.fooladvand,ar.tajweed`;
+      endpoint = `https://api.alquran.cloud/v1/page/${id}/editions/${reciterId},fa.fooladvand`;
     }
 
     fetch(endpoint)
       .then((res) => res.json())
       .then((data) => {
+        if (!data.data || !Array.isArray(data.data)) {
+          throw new Error('داده دریافت نشد');
+        }
+
         const audioData = data.data[0];
         const faData = data.data[1];
-        const tajweedData = data.data[2];
 
         const combinedAyahs = audioData.ayahs.map((ayah, index) => ({
           ...ayah,
-          faText: faData.ayahs[index]?.text,
-          tajweedText: tajweedData.ayahs[index]?.text
+          faText: faData.ayahs[index]?.text
         }));
 
         setSelectedSelection({ type, id, title });
@@ -93,11 +95,11 @@ function App() {
       })
       .catch((err) => {
         console.error('خطا در بارگذاری محتوا:', err);
+        alert('خطا در دریافت اطلاعات. لطفاً مجدداً تلاش کنید.');
         setLoading(false);
       });
   };
 
-  // تغییر قاری
   const handleReciterChange = (e) => {
     const newReciter = e.target.value;
     setSelectedReciter(newReciter);
@@ -106,7 +108,6 @@ function App() {
     }
   };
 
-  // پخش صوت
   const playAyah = (index) => {
     setCurrentAyahIndex(index);
     setIsPlaying(true);
@@ -146,13 +147,14 @@ function App() {
     }
   };
 
-  // تنظیم سرخط
+  // ثبت سرخط
   const setBookmarkHandler = (ayah) => {
+    const sName = ayah.surah?.name || selectedSelection.title;
     const newBookmark = {
       type: selectedSelection.type,
       id: selectedSelection.id,
       title: selectedSelection.title,
-      surahName: ayah.surah?.name || selectedSelection.title,
+      surahName: sName,
       ayahNumber: ayah.numberInSurah,
       globalNumber: ayah.number
     };
@@ -165,14 +167,14 @@ function App() {
     if (!bookmark) return;
     loadContent(
       bookmark.type || 'surah',
-      bookmark.id || bookmark.surahNumber || 1,
-      bookmark.title || bookmark.surahName || 'سوره',
+      bookmark.id || 1,
+      bookmark.title || 'سوره',
       selectedReciter,
-      bookmark.ayahNumber
+      bookmark.globalNumber
     );
   };
 
-  // ثبت یا ویرایش یادداشت
+  // یادداشت‌نویسی
   const handleSaveNote = (globalAyahNumber) => {
     const updatedNotes = { ...notes, [globalAyahNumber]: tempNoteText };
     setNotes(updatedNotes);
@@ -181,28 +183,30 @@ function App() {
     setTempNoteText('');
   };
 
-  // تفسیر آیه
-  const openTafsirModal = (globalAyahNumber, ayahInSurah) => {
+  // دریافت متن واقعی تفسیر نمونه (Tafseer Nemoneh API)
+  const openTafsirModal = (surahNum, ayahNumInSurah, ayahGlobalNum) => {
     setTafsirLoading(true);
-    setActiveTafsir({ ayahInSurah, text: '' });
+    setActiveTafsir({ surahNum, ayahNumInSurah, text: '' });
 
-    fetch(`https://api.alquran.cloud/v1/ayah/${globalAyahNumber}/fa.makarem`)
+    // وب‌سرویس اختصاصی تفسیر نمونه (کد ۱۶۹)
+    fetch(`https://api.quran.com/api/v4/tafsirs/169/by_key/${surahNum}:${ayahNumInSurah}`)
       .then((res) => res.json())
       .then((data) => {
+        let tafsirContent = data.tafsir?.text || 'متن تفسیری برای این آیه یافت نشد.';
         setActiveTafsir({
-          ayahInSurah,
-          text: data.data.text || 'تفسیر برای این آیه یافت نشد.'
+          surahNum,
+          ayahNumInSurah,
+          text: tafsirContent
         });
         setTafsirLoading(false);
       })
       .catch((err) => {
         console.error('خطا در دریافت تفسیر:', err);
-        setActiveTafsir({ ayahInSurah, text: 'خطا در برقراری ارتباط با سرور تفسیر.' });
+        setActiveTafsir({ surahNum, ayahNumInSurah, text: 'خطا در برقراری ارتباط با سرور تفسیر.' });
         setTafsirLoading(false);
       });
   };
 
-  // فیلترهای فهرست
   const filteredSurahs = surahs.filter((surah) =>
     surah.name.includes(searchQuery) ||
     surah.englishName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -252,7 +256,7 @@ function App() {
         </div>
       </header>
 
-      {/* بنر سرخط در صفحه اصلی */}
+      {/* بنر سرخط */}
       {bookmark && !selectedSelection && (
         <div className="bookmark-banner">
           <div className="bookmark-info">
@@ -267,7 +271,6 @@ function App() {
 
       {!selectedSelection ? (
         <main className="main-content">
-          {/* تب‌های دسته‌بندی اصلی: سوره / جزء / صفحه */}
           <div className="tab-navigation">
             <button 
               className={`tab-btn ${viewTab === 'surah' ? 'active' : ''}`}
@@ -301,7 +304,6 @@ function App() {
             className="search-input"
           />
 
-          {/* نمایش بر اساس سوره */}
           {viewTab === 'surah' && (
             <div className="surah-grid">
               {filteredSurahs.map((surah) => (
@@ -320,7 +322,6 @@ function App() {
             </div>
           )}
 
-          {/* نمایش بر اساس جزء */}
           {viewTab === 'juz' && (
             <div className="juz-grid">
               {filteredJuzs.map((juz) => (
@@ -339,7 +340,6 @@ function App() {
             </div>
           )}
 
-          {/* نمایش بر اساس صفحه */}
           {viewTab === 'page' && (
             <div className="page-grid">
               {filteredPages.map((page) => (
@@ -384,18 +384,19 @@ function App() {
           )}
 
           {loading ? (
-            <div className="loading">در حال دریافت آيات و تنظیمات تجوید...</div>
+            <div className="loading">در حال بارگذاری اطلاعات آیات...</div>
           ) : (
             <div className="ayahs-list">
               {ayahs.map((ayah, index) => {
                 const isCurrent = currentAyahIndex === index;
                 const isBookmarked = bookmark?.globalNumber === ayah.number;
                 const hasNote = !!notes[ayah.number];
+                const surahNum = ayah.surah?.number || selectedSelection.id;
 
                 return (
                   <div 
                     key={ayah.number} 
-                    id={`ayah-${ayah.numberInSurah}`}
+                    id={`ayah-global-${ayah.number}`}
                     className={`ayah-card ${isCurrent ? 'active-ayah' : ''} ${isBookmarked ? 'bookmarked-ayah' : ''}`}
                   >
                     <div className="ayah-top">
@@ -428,9 +429,9 @@ function App() {
 
                         <button 
                           className="icon-btn tafsir-btn"
-                          onClick={() => openTafsirModal(ayah.number, ayah.numberInSurah)}
+                          onClick={() => openTafsirModal(surahNum, ayah.numberInSurah, ayah.number)}
                         >
-                          📚 تفسیر
+                          📚 تفسیر نمونه
                         </button>
 
                         <button 
@@ -478,16 +479,19 @@ function App() {
         </div>
       )}
 
-      {/* مودال تفسیر */}
+      {/* مودال نمایش کامل تفسیر نمونه */}
       {activeTafsir && (
         <div className="modal-overlay">
           <div className="modal-content tafsir-modal">
-            <h3>📚 تفسیر آیه {activeTafsir.ayahInSurah} (تفسیر نمونه)</h3>
+            <h3>📚 تفسیر نمونه - آیه {activeTafsir.ayahNumInSurah}</h3>
             <div className="tafsir-body">
               {tafsirLoading ? (
-                <p className="loading">در حال بارگذاری متن تفسیر...</p>
+                <p className="loading">در حال بارگذاری متن کامل تفسیر نمونه...</p>
               ) : (
-                <p className="tafsir-text">{activeTafsir.text}</p>
+                <div 
+                  className="tafsir-text"
+                  dangerouslySetInnerHTML={{ __html: activeTafsir.text }}
+                />
               )}
             </div>
             <div className="modal-actions">
