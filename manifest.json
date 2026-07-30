@@ -1,0 +1,20 @@
+{
+  "short_name": "قرآن آنلاین",
+  "name": "برنامه جامع قرآن کریم (همراه با تندخوانی)",
+  "description": "قرائت، ترجمه، تندخوانی و تفسیر آنلاین و آفلاین قرآن کریم",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0b1329",
+  "theme_color": "#0b1329",
+  "display": "standalone",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "fa"
+}
