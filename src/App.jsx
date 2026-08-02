@@ -1,3 +1,4 @@
+import CampaignManager from './components/CampaignManager/CampaignManager';
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
@@ -488,6 +489,28 @@ function App() {
 
             <button className="install-app-btn" onClick={handleInstallClick}>
               📲 نصب اپلیکیشن
+        <button 
+          onClick={() => setIsCampaignOpen(true)}
+          style={{
+            backgroundColor: '#10b981',
+            color: '#ffffff',
+            border: 'none',
+            padding: '6px 14px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '12px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '5px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+            marginLeft: '6px',
+            marginRight: '6px'
+          }}
+        >
+          <span>🌐</span>
+          <span>پویش‌های قرآنی</span>
+        </button>
             </button>
           </div>
 
