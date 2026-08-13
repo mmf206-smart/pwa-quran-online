@@ -584,7 +584,16 @@ function App() {
                 fontSize: '11px',
                 flex: '2'
               }}>
-                <option>استاد شهریار پرهیزگار (تندخوانی)</option>
+                <option value="parhizgar_fast">استاد شهریار پرهیزگار (تندخوانی)</option>
+                <option value="parhizgar">استاد شهریار پرهیزگار (ترتیل)</option>
+                <option value="abdulbasit_tartil">استاد عبدالباسط عبدالصمد (ترتیل)</option>
+                <option value="abdulbasit_mujawwad">استاد عبدالباسط عبدالصمد (تحقیق)</option>
+                <option value="minshawi">استاد محمدصدیق منشاوی</option>
+                <option value="mustafa_ismail">استاد مصطفی اسماعیل</option>
+                <option value="hussary">استاد خلیل الحصری</option>
+                <option value="afasy">استاد مشاری راشد العفاسی</option>
+                <option value="ghamadi">استاد سعد الغامدی</option>
+                <option value="maher">استاد ماهر المعیقلی</option>
               </select>
 
               <select style={{
