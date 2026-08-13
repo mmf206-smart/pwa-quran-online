@@ -481,6 +481,7 @@ function App() {
       {/* نوار ابزار و هدر اصلی برنامه */}
       {/* نوار ابزار و هدر اصلی برنامه */}
       {/* هدر و نوار ابزار یکپارچه */}
+      {/* هدر و نوار ابزار معراج v1.0.0 */}
       <header style={{
         backgroundColor: '#0f172a',
         color: '#ffffff',
@@ -489,22 +490,33 @@ function App() {
         direction: 'rtl'
       }}>
         <div style={{
-          maxWidth: '800px',
+          maxWidth: '900px',
           margin: '0 auto',
           display: 'flex',
           flexDirection: 'column',
           gap: '10px'
         }}>
-          {/* سطر اول: عنوان برنامه و دکمه‌های اصلی */}
+          {/* سطر اول: عنوان + شماره نسخه + دکمه‌های پویش و نصب */}
           <div style={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            paddingBottom: '6px',
+            paddingBottom: '8px',
             borderBottom: '1px solid rgba(255,255,255,0.08)'
           }}>
-            <h1 style={{ margin: 0, fontSize: '17px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>📖</span> معراج
+            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📖</span>
+              <span>معراج</span>
+              <span style={{
+                fontSize: '10px',
+                fontWeight: 'normal',
+                backgroundColor: '#334155',
+                color: '#94a3b8',
+                padding: '2px 6px',
+                borderRadius: '4px',
+                border: '1px solid #475569',
+                lineHeight: '1'
+              }}>v1.0.0</span>
             </h1>
 
             <div style={{ display: 'flex', gap: '6px' }}>
@@ -514,9 +526,9 @@ function App() {
                   backgroundColor: '#10b981',
                   color: '#ffffff',
                   border: 'none',
-                  padding: '5px 10px',
+                  padding: '6px 12px',
                   borderRadius: '6px',
-                  fontSize: '11px',
+                  fontSize: '12px',
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   display: 'flex',
@@ -532,9 +544,9 @@ function App() {
                   backgroundColor: '#0284c7',
                   color: '#ffffff',
                   border: 'none',
-                  padding: '5px 10px',
+                  padding: '6px 12px',
                   borderRadius: '6px',
-                  fontSize: '11px',
+                  fontSize: '12px',
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   display: 'flex',
@@ -547,7 +559,7 @@ function App() {
             </div>
           </div>
 
-          {/* سطر دوم: نوار ابزار ابزارها و تنظیمات سریع */}
+          {/* سطر دوم: نوار ابزار تنظیمات (ظاهر، زبان، قاریان، سرعت) */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -555,32 +567,48 @@ function App() {
             flexWrap: 'wrap',
             gap: '8px',
             backgroundColor: '#1e293b',
-            padding: '8px',
+            padding: '8px 10px',
             borderRadius: '8px'
           }}>
-            {/* دکمه‌های تنظیمات ظاهری و حساب */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
               <button style={{
                 backgroundColor: '#334155',
                 color: '#f8fafc',
                 border: '1px solid #475569',
-                padding: '4px 8px',
+                padding: '5px 10px',
                 borderRadius: '6px',
                 fontSize: '11px',
                 cursor: 'pointer'
               }}>
                 🎨 رنگ و ظاهر
               </button>
+
+              <select 
+                value={lang || 'fa'} 
+                onChange={(e) => setLang && setLang(e.target.value)}
+                style={{
+                  backgroundColor: '#0f172a',
+                  color: '#e2e8f0',
+                  border: '1px solid #334155',
+                  borderRadius: '6px',
+                  padding: '5px 8px',
+                  fontSize: '11px',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="fa">🌐 فارسی</option>
+                <option value="ar">🌍 العربية</option>
+                <option value="en">🌎 English</option>
+              </select>
             </div>
 
-            {/* بخش انتخاب قاری و سرعت به صورت فشرده کنار هم */}
-            <div style={{ display: 'flex', gap: '6px', flex: '1', minWidth: '220px', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '6px', flex: '1', minWidth: '240px', justifyContent: 'flex-end' }}>
               <select style={{
                 backgroundColor: '#0f172a',
                 color: '#e2e8f0',
                 border: '1px solid #334155',
                 borderRadius: '6px',
-                padding: '4px 6px',
+                padding: '5px 8px',
                 fontSize: '11px',
                 flex: '2'
               }}>
@@ -601,11 +629,13 @@ function App() {
                 color: '#e2e8f0',
                 border: '1px solid #334155',
                 borderRadius: '6px',
-                padding: '4px 6px',
+                padding: '5px 8px',
                 fontSize: '11px',
                 flex: '1'
               }}>
                 <option>1x (عادی)</option>
+                <option>1.25x</option>
+                <option>1.5x</option>
               </select>
             </div>
           </div>
