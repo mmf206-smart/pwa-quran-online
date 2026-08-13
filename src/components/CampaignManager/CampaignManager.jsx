@@ -1,174 +1,168 @@
-import React, { useRef } from 'react';
-import { useAutoScroll } from '../../hooks/useAutoScroll';
-import { useCampaigns } from '../../hooks/useCampaigns';
-import { DEFAULT_APP_DONATION_URL } from '../../locales/translations';
-import { styles } from './CampaignManager.styles';
-
-import ActiveCampaignsTab from './components/ActiveCampaignsTab';
-import PendingAdminTab from './components/PendingAdminTab';
-import CampaignHistoryTab from './components/CampaignHistoryTab';
-import CreateCampaignTab from './components/CreateCampaignTab';
+import React, { useState, useEffect } from 'react';
 
 export default function CampaignManager({ isOpen, onClose }) {
-  const bodyRef = useRef(null);
-  const activeCardRef = useRef(null);
+  const [campaigns, setCampaigns] = useState(() => {
+    const saved = localStorage.getItem('meraj_campaigns');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, title: 'ختم سراسری قرآن کریم (دوره ۴۵)', target: 604, current: 412, unit: 'صفحه', icon: '📖' },
+      { id: 2, title: 'پویش هدیه سوره یس به روح اموات', target: 1000, current: 680, unit: 'بار', icon: '✨' },
+      { id: 3, title: 'پویش صلوات جهت تعجیل در فرج', target: 100000, current: 74200, unit: 'صلوات', icon: '📿' }
+    ];
+  });
 
-  const {
-    lang,
-    t,
-    deviceId,
-    isAdmin,
-    showAdminLogin,
-    setShowAdminLogin,
-    adminPasswordInput,
-    setAdminPasswordInput,
-    campaigns,
-    setCampaigns,
-    activeTab,
-    setActiveTab,
-    trustedUsers,
-    bannedUsers,
-    handleLangChange,
-    handleAdminLogin,
-    handleAdminLogout,
-    handleApproveCampaign,
-    handleRejectCampaign,
-    handleShareCampaign,
-    handleOpenDonation
-  } = useCampaigns();
+  const [selectedCampaign, setSelectedCampaign] = useState(1);
+  const [contribution, setContribution] = useState(1);
+  const [successMsg, setSuccessMsg] = useState('');
 
-  const activePlayingCampaign = campaigns.find(c => c.status === 'active' && c.isPlaying);
-  useAutoScroll(bodyRef, activeCardRef, !!activePlayingCampaign);
+  useEffect(() => {
+    localStorage.setItem('meraj_campaigns', JSON.stringify(campaigns));
+  }, [campaigns]);
 
   if (!isOpen) return null;
 
-  const isBanned = bannedUsers.includes(deviceId);
-  const isTrusted = trustedUsers.includes(deviceId);
-  const hasActiveCampaign = campaigns.some(c => c.creatorId === deviceId && (c.status === 'active' || c.status === 'pending'));
-
-  const activeCampaigns = campaigns.filter(c => c.status === 'active');
-  const pendingCampaigns = campaigns.filter(c => c.status === 'pending');
-  const myCampaigns = campaigns.filter(c => c.creatorId === deviceId);
-
-  const handleCampaignCreated = (newCampaign, isUserTrusted) => {
-    setCampaigns(prev => [newCampaign, ...prev]);
-    if (isUserTrusted) {
-      alert(t.statusTrusted);
-      setActiveTab('active');
-    } else {
-      alert(t.statusFirstTime);
-      setActiveTab('myHistory');
-    }
+  const handleContribute = (e) => {
+    e.preventDefault();
+    const count = parseInt(contribution) || 1;
+    setCampaigns(prev => prev.map(c => {
+      if (c.id === selectedCampaign) {
+        return { ...c, current: Math.min(c.target, c.current + count) };
+      }
+      return c;
+    }));
+    setSuccessMsg('✅ سهم شما با موفقیت ثبت شد. التماس دعا');
+    setTimeout(() => setSuccessMsg(''), 3000);
   };
 
+  const activeC = campaigns.find(c => c.id === selectedCampaign);
+
   return (
-    <div style={styles.overlay}>
-      <div style={{ ...styles.modal, direction: t.dir }}>
-        <div style={styles.header}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h3 style={{ margin: 0, fontSize: '15px' }}>{t.title}</h3>
-            <select value={lang} onChange={(e) => handleLangChange(e.target.value)} style={styles.langSelect}>
-              <option value="fa">🇮🇷 فارسی</option>
-              <option value="en">🇬🇧 English</option>
-              <option value="ar">🇸🇦 العربية</option>
-              <option value="id">🇮🇩 Bahasa</option>
-            </select>
-          </div>
-
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-            <button onClick={() => handleOpenDonation(DEFAULT_APP_DONATION_URL)} style={styles.appSupportHeaderBtn}>
-              {t.appSupportBtn}
-            </button>
-
-            {!isAdmin ? (
-              <button onClick={() => setShowAdminLogin(!showAdminLogin)} style={styles.adminBtn}>{t.adminLogin}</button>
-            ) : (
-              <button onClick={handleAdminLogout} style={{ ...styles.adminBtn, background: '#ef4444', color: '#fff' }}>{t.adminLogout}</button>
-            )}
-            <button onClick={onClose} style={styles.closeBtn}>✕</button>
-          </div>
+    <div style={{
+      position: 'fixed',
+      top: 0, left: 0, right: 0, bottom: 0,
+      backgroundColor: 'rgba(15, 23, 42, 0.85)',
+      backdropFilter: 'blur(4px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      zIndex: 9999,
+      padding: '16px',
+      direction: 'rtl'
+    }}>
+      <div style={{
+        backgroundColor: '#1e293b',
+        border: '1px solid #334155',
+        borderRadius: '12px',
+        width: '100%',
+        maxWidth: '520px',
+        color: '#f8fafc',
+        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+        overflow: 'hidden'
+      }}>
+        {/* هدر مودال */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '16px 20px',
+          borderBottom: '1px solid #334155',
+          backgroundColor: '#0f172a'
+        }}>
+          <h2 style={{ margin: 0, fontSize: '16px', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🌐</span> پویش‌های فعال معراج
+          </h2>
+          <button onClick={onClose} style={{
+            background: 'none',
+            border: 'none',
+            color: '#94a3b8',
+            fontSize: '20px',
+            cursor: 'pointer'
+          }}>✕</button>
         </div>
 
-        {showAdminLogin && !isAdmin && (
-          <form onSubmit={handleAdminLogin} style={styles.adminForm}>
-            <input 
-              type="password" 
-              placeholder="Pass: 123456" 
-              value={adminPasswordInput} 
-              onChange={(e) => setAdminPasswordInput(e.target.value)} 
-              style={styles.input} 
-            />
-            <button type="submit" style={styles.submitBtn}>OK</button>
+        {/* بدنه مودال */}
+        <div style={{ padding: '20px' }}>
+          {/* انتخاب پویش */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+            {campaigns.map(c => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCampaign(c.id)}
+                style={{
+                  flex: 1,
+                  padding: '8px',
+                  borderRadius: '6px',
+                  border: selectedCampaign === c.id ? '1px solid #38bdf8' : '1px solid #334155',
+                  backgroundColor: selectedCampaign === c.id ? '#0284c7' : '#0f172a',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  fontWeight: selectedCampaign === c.id ? 'bold' : 'normal'
+                }}
+              >
+                {c.icon} {c.title.split(' ')[0]} {c.title.split(' ')[1]}
+              </button>
+            ))}
+          </div>
+
+          {/* اطلاعات و درصد پیشرفت */}
+          {activeC && (
+            <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '8px', marginBottom: '16px' }}>
+              <h3 style={{ margin: '0 0 8px 0', fontSize: '14px', color: '#f1f5f9' }}>{activeC.title}</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', marginBottom: '6px' }}>
+                <span>پیشرفت پویش: {activeC.current.toLocaleString('fa-IR')} از {activeC.target.toLocaleString('fa-IR')} {activeC.unit}</span>
+                <span>{Math.round((activeC.current / activeC.target) * 100)}٪</span>
+              </div>
+              <div style={{ width: '100%', height: '8px', backgroundColor: '#334155', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${(activeC.current / activeC.target) * 100}%`,
+                  height: '100%',
+                  backgroundColor: '#10b981',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+            </div>
+          )}
+
+          {/* فرم ثبت مشارکت */}
+          <form onSubmit={handleContribute} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <label style={{ fontSize: '12px', color: '#cbd5e1' }}>تعداد سهم شما جهت مشارکت ({activeC?.unit}):</label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="number"
+                min="1"
+                value={contribution}
+                onChange={(e) => setContribution(e.target.value)}
+                style={{
+                  flex: 1,
+                  backgroundColor: '#0f172a',
+                  border: '1px solid #334155',
+                  borderRadius: '6px',
+                  padding: '8px 12px',
+                  color: '#ffffff',
+                  fontSize: '14px'
+                }}
+              />
+              <button type="submit" style={{
+                backgroundColor: '#10b981',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '8px 20px',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}>
+                ثبت سهم
+              </button>
+            </div>
           </form>
-        )}
 
-        <div style={styles.statusBar}>
-          {isBanned && <span style={{ color: '#dc2626' }}>{t.statusBanned}</span>}
-          {!isBanned && hasActiveCampaign && <span style={{ color: '#d97706' }}>{t.statusActiveLimit}</span>}
-          {!isBanned && !hasActiveCampaign && isTrusted && <span style={{ color: '#16a34a' }}>{t.statusTrusted}</span>}
-          {!isBanned && !hasActiveCampaign && !isTrusted && <span style={{ color: '#0284c7' }}>{t.statusFirstTime}</span>}
-        </div>
-
-        <div style={styles.tabContainer}>
-          <button style={{ ...styles.tab, borderBottom: activeTab === 'active' ? '3px solid #10b981' : 'none' }} onClick={() => setActiveTab('active')}>
-            {t.activeCampaigns} ({activeCampaigns.length})
-          </button>
-          {isAdmin && (
-            <button style={{ ...styles.tab, borderBottom: activeTab === 'pending' ? '3px solid #f59e0b' : 'none', color: '#d97706' }} onClick={() => setActiveTab('pending')}>
-              {t.pendingAdmin} ({pendingCampaigns.length})
-            </button>
-          )}
-          <button style={{ ...styles.tab, borderBottom: activeTab === 'myHistory' ? '3px solid #10b981' : 'none' }} onClick={() => setActiveTab('myHistory')}>
-            {t.myHistory}
-          </button>
-          <button style={{ ...styles.tab, borderBottom: activeTab === 'create' ? '3px solid #10b981' : 'none' }} onClick={() => setActiveTab('create')}>
-            {t.createCampaign}
-          </button>
-        </div>
-
-        <div ref={bodyRef} style={styles.body}>
-          {activeTab === 'active' && (
-            <ActiveCampaignsTab 
-              campaigns={activeCampaigns} 
-              activeCardRef={activeCardRef} 
-              t={t} 
-              styles={styles} 
-              onShare={handleShareCampaign} 
-              onDonate={handleOpenDonation} 
-            />
-          )}
-
-          {activeTab === 'pending' && isAdmin && (
-            <PendingAdminTab 
-              campaigns={pendingCampaigns} 
-              t={t} 
-              styles={styles} 
-              onApprove={handleApproveCampaign} 
-              onReject={handleRejectCampaign} 
-            />
-          )}
-
-          {activeTab === 'myHistory' && (
-            <CampaignHistoryTab 
-              campaigns={myCampaigns} 
-              styles={styles} 
-            />
-          )}
-
-          {activeTab === 'create' && (
-            <CreateCampaignTab 
-              isBanned={isBanned} 
-              hasActiveCampaign={hasActiveCampaign} 
-              isTrusted={isTrusted} 
-              deviceId={deviceId} 
-              t={t} 
-              styles={styles} 
-              onCampaignCreated={handleCampaignCreated} 
-              DEFAULT_APP_DONATION_URL={DEFAULT_APP_DONATION_URL} 
-            />
+          {successMsg && (
+            <div style={{ marginTop: '12px', padding: '8px 12px', backgroundColor: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981', borderRadius: '6px', color: '#34d399', fontSize: '12px', textAlign: 'center' }}>
+              {successMsg}
+            </div>
           )}
         </div>
-
       </div>
     </div>
   );
