@@ -479,6 +479,7 @@ function App() {
   return (
     <div className="app-container" dir="rtl" style={dynamicStyle}>
       {/* نوار ابزار و هدر اصلی برنامه */}
+      {/* نوار ابزار و هدر اصلی برنامه */}
       <header style={{
         backgroundColor: '#1e293b',
         color: '#ffffff',
