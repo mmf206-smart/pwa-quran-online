@@ -42,6 +42,8 @@ const PRESET_THEMES = {
 };
 
 function App() {
+  const [isCampaignOpen, setIsCampaignOpen] = useState(false);
+  const [lang, setLang] = useState('fa');
   const [surahs, setSurahs] = useState([]);
   const [viewTab, setViewTab] = useState('surah'); // 'surah' | 'juz' | 'page'
   const [selectedSelection, setSelectedSelection] = useState(null); // { type, id, title }
@@ -478,167 +480,100 @@ function App() {
 
   return (
     <div className="app-container" dir="rtl" style={dynamicStyle}>
-      {/* نوار ابزار و هدر اصلی برنامه */}
-      {/* نوار ابزار و هدر اصلی برنامه */}
-      {/* هدر و نوار ابزار یکپارچه */}
-      {/* هدر و نوار ابزار معراج v1.0.0 */}
-      <header style={{
-        backgroundColor: '#0f172a',
-        color: '#ffffff',
-        padding: '12px 10px',
-        borderBottom: '1px solid #1e293b',
-        direction: 'rtl'
-      }}>
-        <div style={{
-          maxWidth: '900px',
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
-        }}>
-          {/* سطر اول: عنوان + شماره نسخه + دکمه‌های پویش و نصب */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
+      <header className="header">
+        <div className="header-title-section">
+          <h1>📖 معراج <span style={{fontSize:'10px',color:'#94a3b8',backgroundColor:'#334155',padding:'2px 5px',borderRadius:'4px',marginRight:'4px'}}>v1.0.0</span></h1>
+          
+          <div className="header-buttons">
+            <button className="theme-settings-btn" onClick={() => setSettingsModalOpen(true)} title="تنظیم رنگ‌ها و تم">
+              🎨 رنگ و ظاهر
+            </button>
+
+            <button className="install-app-btn" onClick={handleInstallClick}>
+              📲 نصب اپلیکیشن
+        <button 
+          onClick={() => setIsCampaignOpen(true)}
+          style={{
+            backgroundColor: '#10b981',
+            color: '#ffffff',
+            border: 'none',
+            padding: '6px 14px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '12px',
+            display: 'inline-flex',
             alignItems: 'center',
-            paddingBottom: '8px',
-            borderBottom: '1px solid rgba(255,255,255,0.08)'
-          }}>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>📖</span>
-              <span>معراج</span>
-              <span style={{
-                fontSize: '10px',
-                fontWeight: 'normal',
-                backgroundColor: '#334155',
-                color: '#94a3b8',
-                padding: '2px 6px',
-                borderRadius: '4px',
-                border: '1px solid #475569',
-                lineHeight: '1'
-              }}>v1.0.0</span>
-            </h1>
-
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <button 
-                onClick={() => setIsCampaignOpen(true)}
-                style={{
-                  backgroundColor: '#10b981',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <span>🌐</span> پویش‌ها
-              </button>
-
-              <button 
-                style={{
-                  backgroundColor: '#0284c7',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '6px 12px',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <span>📱</span> نصب اپ
-              </button>
-            </div>
+            gap: '5px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+            marginLeft: '6px',
+            marginRight: '6px'
+          }}
+        >
+          <span>🌐</span>
+          <span>پویش‌های قرآنی</span>
+        </button>
+            </button>
           </div>
 
-          {/* سطر دوم: نوار ابزار تنظیمات (ظاهر، زبان، قاریان، سرعت) */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '8px',
-            backgroundColor: '#1e293b',
-            padding: '8px 10px',
-            borderRadius: '8px'
-          }}>
-            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-              <button style={{
-                backgroundColor: '#334155',
-                color: '#f8fafc',
-                border: '1px solid #475569',
-                padding: '5px 10px',
-                borderRadius: '6px',
-                fontSize: '11px',
-                cursor: 'pointer'
-              }}>
-                🎨 رنگ و ظاهر
-              </button>
-
-              <select 
-                value={lang || 'fa'} 
-                onChange={(e) => setLang && setLang(e.target.value)}
-                style={{
-                  backgroundColor: '#0f172a',
-                  color: '#e2e8f0',
-                  border: '1px solid #334155',
-                  borderRadius: '6px',
-                  padding: '5px 8px',
-                  fontSize: '11px',
-                  cursor: 'pointer'
-                }}
+          <div className="user-auth-badge">
+            {currentUser ? (
+              <div className="logged-user-info">
+                <span className="user-greeting">👤 {currentUser.name}</span>
+                <button onClick={handleLogout} className="logout-btn" title="خروج از حساب">
+                  🚪 خروج
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={() => { resetAuthForm(); setAuthMode('login'); setAuthModalOpen(true); }} 
+                className="login-trigger-btn"
               >
-                <option value="fa">🌐 فارسی</option>
-                <option value="ar">🌍 العربية</option>
-                <option value="en">🌎 English</option>
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', gap: '6px', flex: '1', minWidth: '240px', justifyContent: 'flex-end' }}>
-              <select style={{
-                backgroundColor: '#0f172a',
-                color: '#e2e8f0',
-                border: '1px solid #334155',
-                borderRadius: '6px',
-                padding: '5px 8px',
-                fontSize: '11px',
-                flex: '2'
-              }}>
-                <option value="parhizgar_fast">استاد شهریار پرهیزگار (تندخوانی)</option>
-                <option value="parhizgar">استاد شهریار پرهیزگار (ترتیل)</option>
-                <option value="abdulbasit_tartil">استاد عبدالباسط عبدالصمد (ترتیل)</option>
-                <option value="abdulbasit_mujawwad">استاد عبدالباسط عبدالصمد (تحقیق)</option>
-                <option value="minshawi">استاد محمدصدیق منشاوی</option>
-                <option value="mustafa_ismail">استاد مصطفی اسماعیل</option>
-                <option value="hussary">استاد خلیل الحصری</option>
-                <option value="afasy">استاد مشاری راشد العفاسی</option>
-                <option value="ghamadi">استاد سعد الغامدی</option>
-                <option value="maher">استاد ماهر المعیقلی</option>
-              </select>
-
-              <select style={{
-                backgroundColor: '#0f172a',
-                color: '#e2e8f0',
-                border: '1px solid #334155',
-                borderRadius: '6px',
-                padding: '5px 8px',
-                fontSize: '11px',
-                flex: '1'
-              }}>
-                <option>1x (عادی)</option>
-                <option>1.25x</option>
-                <option>1.5x</option>
-              </select>
-            </div>
+                🔑 ورود / ثبت‌نام
+              </button>
+            )}
           </div>
+        </div>
+        
+        <div className="header-actions">
+          {bookmark && currentUser && (
+            <button className="header-bookmark-btn" onClick={handleGoToBookmark} title="پرش مستقیم به سرخط">
+              🔖 سرخط من ({bookmark.surahName} - آیه {bookmark.ayahNumber})
+            </button>
+          )}
+
+          <select value={selectedReciter} onChange={handleReciterChange} className="reciter-select">
+            {RECITERS.map((r) => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+
+          <div className="speed-control-box">
+            <span>⚡ سرعت:</span>
+            <select 
+              value={playbackRate} 
+              onChange={(e) => setPlaybackRate(parseFloat(e.target.value))}
+              className="speed-select"
+            >
+              <option value="1">1x (عادی)</option>
+              <option value="1.25">1.25x (تندخوانی)</option>
+              <option value="1.5">1.5x (تندخوانی سریع)</option>
+              <option value="2">2x (تندخوانی فوق‌سریع)</option>
+            </select>
+          </div>
+
+          {selectedSelection && (
+            <button 
+              className="back-btn" 
+              onClick={() => { 
+                setSelectedSelection(null); 
+                setIsPlaying(false); 
+                setCurrentAyahIndex(null); 
+              }}
+            >
+              ← فهرست اصلی
+            </button>
+          )}
         </div>
       </header>
 
@@ -1049,7 +984,9 @@ function App() {
           </div>
         </div>
       )}
-    </div>
+    
+      <CampaignManager isOpen={isCampaignOpen} onClose={() => setIsCampaignOpen(false)} />
+</div>
   );
 }
 
