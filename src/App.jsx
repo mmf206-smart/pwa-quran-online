@@ -480,113 +480,126 @@ function App() {
     <div className="app-container" dir="rtl" style={dynamicStyle}>
       {/* نوار ابزار و هدر اصلی برنامه */}
       {/* نوار ابزار و هدر اصلی برنامه */}
+      {/* هدر و نوار ابزار یکپارچه */}
       <header style={{
-        backgroundColor: '#1e293b',
+        backgroundColor: '#0f172a',
         color: '#ffffff',
-        padding: '12px 20px',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        padding: '12px 10px',
+        borderBottom: '1px solid #1e293b',
         direction: 'rtl'
       }}>
         <div style={{
-          maxWidth: '1200px',
+          maxWidth: '800px',
           margin: '0 auto',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '12px'
+          flexDirection: 'column',
+          gap: '10px'
         }}>
-          {/* لوگو و عنوان */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{ fontSize: '24px' }}>📖</span>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#38bdf8' }}>
-              قرآن آنلاین PWA
+          {/* سطر اول: عنوان برنامه و دکمه‌های اصلی */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingBottom: '6px',
+            borderBottom: '1px solid rgba(255,255,255,0.08)'
+          }}>
+            <h1 style={{ margin: 0, fontSize: '17px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>📖</span> قرآن آنلاین PWA
             </h1>
+
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <button 
+                onClick={() => setIsCampaignOpen(true)}
+                style={{
+                  backgroundColor: '#10b981',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>🌐</span> پویش‌ها
+              </button>
+
+              <button 
+                style={{
+                  backgroundColor: '#0284c7',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '5px 10px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <span>📱</span> نصب اپ
+              </button>
+            </div>
           </div>
 
-          {/* نوار ابزار (Toolbar Buttons) */}
-          <nav style={{
+          {/* سطر دوم: نوار ابزار ابزارها و تنظیمات سریع */}
+          <div style={{
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
             gap: '8px',
-            flexWrap: 'wrap'
+            backgroundColor: '#1e293b',
+            padding: '8px',
+            borderRadius: '8px'
           }}>
-            <button 
-              onClick={() => setIsCampaignOpen(true)}
-              style={{
-                backgroundColor: '#10b981',
-                color: '#ffffff',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontWeight: 'bold',
-                fontSize: '13px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.2s',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-              }}
-            >
-              <span>🌐</span>
-              <span>پویش‌های قرآنی</span>
-            </button>
-
-            <button 
-              style={{
-                backgroundColor: '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <span>📱</span>
-              <span>نصب اپلیکیشن</span>
-            </button>
-
-            <button 
-              style={{
+            {/* دکمه‌های تنظیمات ظاهری و حساب */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+              <button style={{
                 backgroundColor: '#334155',
                 color: '#f8fafc',
                 border: '1px solid #475569',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <span>🎨</span>
-              <span>رنگ و ظاهر</span>
-            </button>
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                cursor: 'pointer'
+              }}>
+                🎨 رنگ و ظاهر
+              </button>
+            </div>
 
-            <button 
-              style={{
-                backgroundColor: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                padding: '8px 14px',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <span>🔑</span>
-              <span>ورود / ثبت‌نام</span>
-            </button>
-          </nav>
+            {/* بخش انتخاب قاری و سرعت به صورت فشرده کنار هم */}
+            <div style={{ display: 'flex', gap: '6px', flex: '1', minWidth: '220px', justifyContent: 'flex-end' }}>
+              <select style={{
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #334155',
+                borderRadius: '6px',
+                padding: '4px 6px',
+                fontSize: '11px',
+                flex: '2'
+              }}>
+                <option>استاد شهریار پرهیزگار (تندخوانی)</option>
+              </select>
+
+              <select style={{
+                backgroundColor: '#0f172a',
+                color: '#e2e8f0',
+                border: '1px solid #334155',
+                borderRadius: '6px',
+                padding: '4px 6px',
+                fontSize: '11px',
+                flex: '1'
+              }}>
+                <option>1x (عادی)</option>
+              </select>
+            </div>
+          </div>
         </div>
       </header>
 
