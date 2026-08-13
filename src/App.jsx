@@ -504,7 +504,7 @@ function App() {
             borderBottom: '1px solid rgba(255,255,255,0.08)'
           }}>
             <h1 style={{ margin: 0, fontSize: '17px', fontWeight: 'bold', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span>📖</span> قرآن آنلاین PWA
+              <span>📖</span> معراج
             </h1>
 
             <div style={{ display: 'flex', gap: '6px' }}>
