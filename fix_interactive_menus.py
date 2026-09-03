@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+import os
+
+app_path = os.path.join('src', 'App.jsx')
+
+app_code = """import React, { useState } from 'react';
 import CampaignManager from './components/CampaignManager/CampaignManager';
 
 export default function App() {
@@ -228,3 +232,9 @@ export default function App() {
     </div>
   );
 }
+"""
+
+with open(app_path, 'w', encoding='utf-8') as f:
+    f.write(app_code)
+
+print("✨ تمامی منوها، مودال‌ها و عملکرد کلیک کارت‌ها با موفقیت فعال شدند!")
